@@ -14,10 +14,10 @@
  *
  */
 definition(
-    name: "Sleep Number Manager",
+    name: "Sleep Number Position Manager",
     namespace: "ClassicTim1",
     author: "Classic_Tim",
-    description: "Control your Sleep Number bed vai SmartThings. You can use it to raise, lower, and adjsut the pressure on each side of the bed seperately if it's split, or all together if it's not. If you want to do each side seperately you must use two devices for each side",
+    description: "Control your Sleep Number POSITION bed via SmartThings. You can use it to raise, lower, and adjsut the pressure on each side of the bed seperately if it's split, or all together if it's not. If you want to do each side seperately you must use two devices for each side",
     category: "Convenience",
     iconUrl: "https://raw.githubusercontent.com/ClassicTim1/SleepNumberManager/master/icons/logo.jpg",
     iconX2Url: "https://raw.githubusercontent.com/ClassicTim1/SleepNumberManager/master/icons/logo.jpg",
@@ -101,7 +101,8 @@ def createDevicePage(params) {
   log.trace "createDevicePage()"
 
   def deviceId = "sleepiq.${params.bedId}.${params.side}"
-  def device = addChildDevice("sleepNumberBed", "Sleep Number Bed", deviceId, null, [label: settings.newDeviceName])
+  //def device = addChildDevice("sleepNumberBed", "Sleep Number Bed", deviceId, null, [label: settings.newDeviceName])
+  def device = addChildDevice("sleepNumberBedPosition", "Sleep Number Bed Position", deviceId, null, [label: settings.newDeviceName])
   device.setBedId(params.bedId)
   device.setSide(params.side)
   settings.newDeviceName = null
@@ -158,12 +159,12 @@ def processBedData(responseData) {
     for(def bed : responseData.beds) {
       if (device.currentBedId == bed.bedId) {
       def bedSide = bed.leftSide
-      	if(device.currentSide == "Right")
-        	bedSide = bed.rightSide
+        if(device.currentSide == "Right")
+          bedSide = bed.rightSide
         def foundationStatus = updateFoundationStatus(device.currentBedId, device.currentSide)
         String onOff = "off"
         if(foundationStatus.fsCurrentPositionPresetRight != null && ((device.currentSide == "Right" && foundationStatus.fsCurrentPositionPresetRight != "Flat") || (device.currentSide == "Left" && foundationStatus.fsCurrentPositionPresetLeft != "Flat"))){
-       		onOff = "on"
+          onOff = "on"
         }
         device.updateData(onOff, bedSide.sleepNumber, bedSide.isInBed)
         break;
@@ -268,7 +269,7 @@ private def login() {
         response.getHeaders('Set-Cookie').each {
           state.session.cookies = state.session.cookies + it.value.split(';')[0] + ';'
         }
-  		getBedData()
+      getBedData()
       } else {
         log.trace "[SleepNumberManager] Login failed: ($response.status) $response.data"
         state.session = null
@@ -292,14 +293,20 @@ private def lowerBed(String bedId, String side){
   put('/rest/bed/'+bedId+'/foundation/preset?_k=', "{'preset':4,'side':"+side+",'speed':0}")
 }
 
-private def setNumber(String bedId, String side, number){
+/*private def setNumber(String bedId, String side, number){
   log.trace "[SleepNumberManager] Setting sleep number side "+side+" to "+number+"..."
   put('/rest/bed/'+bedId+'/sleepNumber?_k=', "{'bed': "+bedId+", 'side': "+side+", 'sleepNumber': "+number+"}")
+}*/
+
+private def setNumber(String bedId, String side, number){
+  log.trace "[SleepNumberManager] Setting sleep POSITION side "+side+" to "+number+"..."
+  put('/rest/bed/'+bedId+'/foundation/adjustment/micro?_k=', "{'side': "+side+", 'speed': 0, 'position': "+number+", actuator: 'H'}")
 }
+
 
 private def put(String uri, String body){
   if(needsLogin()){
-  	login()
+    login()
   }
   uri = uri + state.session?.key
   
@@ -317,7 +324,7 @@ private def put(String uri, String body){
     ]
     httpPut(statusParams) { response -> 
       if (response.status == 200) {
-  		getBedData()
+      getBedData()
         return true
       } else {
         log.error "[SleepNumberManager] Put Request failed: "+uri+" : "+body+" : ($response.status) $response.data"
@@ -332,8 +339,8 @@ private def put(String uri, String body){
 }
 
 private def needsLogin(){
-	if(!state.session || !state.session?.key)
-    	return true
+  if(!state.session || !state.session?.key)
+      return true
         
     try {
         def statusParams = [
