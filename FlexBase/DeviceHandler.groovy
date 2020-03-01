@@ -13,7 +13,7 @@
  *  for the specific language governing permissions and limitations under the License.
  */
 metadata {
-	definition (name: "Sleep Number Bed", namespace: "sleepNumberBed", author: "Classic_Tim", cstHandler: true) {
+	definition (name: "Sleep Number Bed Position", namespace: "sleepNumberBedPosition", author: "Classic_Tim", cstHandler: true) {
 		capability "Switch Level"
         capability "Switch"
         capability "PresenceSensor"
